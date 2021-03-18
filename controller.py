@@ -95,8 +95,15 @@ class Gen3Controller(LeafSystem):
                 "storage_function",
                 BasicVector(1),
                 self.DoCalcStorageFcnOutput)
+
+        # Output port for storage function derivative Vdot (for logging)
+        self.Vdot = 0
+        self.DeclareVectorOutputPort(
+                "storage_function_dot",
+                BasicVector(1),
+                self.DoCalcStorageFcnDotOutput)
         
-        # Output port for  tracking error x_tilde (for logging)
+        # Output port for tracking error x_tilde (for logging)
         self.err = 0
         self.DeclareVectorOutputPort(
                 "error",
@@ -513,6 +520,12 @@ class Gen3Controller(LeafSystem):
         """
         output.SetFromVector([self.V])
     
+    def DoCalcStorageFcnDotOutput(self, context, output):
+        """
+        Output the current value of the derivative of the storage function.
+        """
+        output.SetFromVector([self.Vdot])
+    
     def DoCalcErrOutput(self, context, output):
         """
         Output the current value of the simulation function.
@@ -738,6 +751,7 @@ class Gen3Controller(LeafSystem):
 
         # Record stuff for plots
         self.V = 0.5*xd_tilde.T@Lambda@xd_tilde + 0.5*x_tilde.T@Kp@x_tilde
+        self.Vdot = xd_tilde.T@(Lambda@Q@Jbar@xd_tilde - Lambda@xdd_nom + Lambda@(J@qdd + Jdqd) + Kp@x_tilde)
         self.x = x
         self.xd = xd
         self.err = x_tilde.T@x_tilde

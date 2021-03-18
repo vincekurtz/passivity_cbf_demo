@@ -30,7 +30,7 @@ class SimplePlanner(LeafSystem):
                                     0.0,
                                     np.pi/2,
                                     0.1,
-                                    0.5,
+                                    1.0,
                                     0.50])
         else:
             target_pose = np.array([np.pi-0.5,  

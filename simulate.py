@@ -10,7 +10,7 @@ from planners import GuiPlanner, SimplePlanner, PegPlanner
 
 ############## Setup Parameters #################
 
-sim_time = np.inf
+sim_time = 5
 dt = 3e-3
 target_realtime_rate = 1.0
 
@@ -26,7 +26,7 @@ x0 = np.array([np.pi-0.5,
                0.5])
 
 # High-level planner
-planner = "gui"    # must be one of "gui", "peg", or "simple"
+planner = "simple"    # must be one of "gui", "peg", or "simple"
 
 include_manipuland = False
 
@@ -212,6 +212,9 @@ plant_logger.set_name("plant_logger")
 V_logger = LogOutput(controller.GetOutputPort("storage_function"),builder)
 V_logger.set_name("V_logger")
 
+Vdot_logger = LogOutput(controller.GetOutputPort("storage_function_dot"),builder)
+Vdot_logger.set_name("Vdot_logger")
+
 err_logger = LogOutput(controller.GetOutputPort("error"),builder)
 err_logger.set_name("error_logger")
 
@@ -312,9 +315,15 @@ if make_plots:
     ###########################################################
 
     plt.figure()
+    plt.subplot(2,1,1)
     plt.plot(t[1:], V_logger.data().T[1:], linewidth='2',label="Storage Function")
     #plt.plot(t[1:], err_logger.data().T[1:], linewidth='2',label="Output Error")
+    plt.ylabel("Storage Function ($V$)")
+
+    plt.subplot(2,1,2)
+    plt.plot(t[1:], Vdot_logger.data().T[1:], linewidth='2')
+    plt.gca().axhline(0, linewidth='2', linestyle="--", color="grey")
     plt.xlabel("time (s)")
-    plt.legend()
+    plt.ylabel("Storage Function Dot ($\dot{V}$)")
 
     plt.show()
