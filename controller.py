@@ -19,7 +19,7 @@ class Gen3Controller(LeafSystem):
                           -----------------------------
 
     """
-    def __init__(self, plant, dt, strategy="ours"):
+    def __init__(self, plant, dt, strategy="ours", constraints="singularity"):
         LeafSystem.__init__(self)
 
         # Type of control method to use. 
@@ -30,6 +30,11 @@ class Gen3Controller(LeafSystem):
         assert (strategy == "ours") or (strategy == "constrained") or (strategy == "standard"), \
                 "Invalid stragety %s" % strategy
         self.strategy = strategy
+
+        # Type of additional constraint to apply.
+        assert (constraints == "singularity") or (constraints == "joint") or (constraints == "none"), \
+                "Invalid constraint type %s" % constraints
+        self.constraint_type = constraints
 
         self.dt = dt
         self.plant = plant
@@ -712,18 +717,6 @@ class Gen3Controller(LeafSystem):
             self.AddVdotConstraint(xd_tilde, Lambda, Q, Jbar, xdd_nom, 
                                                 J, qdd, Jdqd, Kp, x_tilde)
       
-        # s.t. qdd >= -alpha_qd(qd - qd_min)   (joint velocity CBF constraint)
-        #     -qdd >= -alpha_qd(qd_max - qd)
-        #ah_qd_min = alpha_qd(qd - self.qd_min)
-        #ah_qd_max = alpha_qd(self.qd_max - qd)
-        #self.AddJointVelCBFConstraint(qdd, ah_qd_min, ah_qd_max)
-        
-        # s.t. qdd >= -beta_q( qd + alpha_q(q - q_min) )   (joint angle CBF constraint)
-        #     -qdd >= -beta_q( alpha_q(q_max - q) - qd )
-        #ah_q_min = beta_q( qd + alpha_q(q - self.q_min) )
-        #ah_q_max = beta_q( alpha_q(self.q_max - q) - qd )
-        #self.AddJointVelCBFConstraint(qdd, ah_q_min, ah_q_max)
-       
         if (self.strategy == "standard"):
             # s.t. Jbar'*tau = f_des, where
             # f_des = Lambda*xdd_nom + Lambda*Q*(qd - Jbar*xd_tilde) + Jbar.T*tau_g 
@@ -732,8 +725,24 @@ class Gen3Controller(LeafSystem):
                                            xd_tilde, tau_g, Kp, x_tilde, Kd)
    
         if (self.strategy == "ours") or (self.strategy == "constrained"):
-            # s.t. hdd(x,u) >= -Ka*[h(x);hd(x)]
-            self.AddSingularityCBFConstraint(q, qd, qdd, mu, J_mu, J_mu_dot, eps)
+       
+            if self.constraint_type == "singularity":
+                # s.t. hdd(x,u) >= -Ka*[h(x);hd(x)]
+                self.AddSingularityCBFConstraint(q, qd, qdd, mu, J_mu, J_mu_dot, eps)
+        
+            elif self.constraint_type == "joint":
+                # s.t. qdd >= -alpha_qd(qd - qd_min)   (joint velocity CBF constraint)
+                #     -qdd >= -alpha_qd(qd_max - qd)
+                ah_qd_min = alpha_qd(qd - self.qd_min)
+                ah_qd_max = alpha_qd(self.qd_max - qd)
+                self.AddJointVelCBFConstraint(qdd, ah_qd_min, ah_qd_max)
+                
+                # s.t. qdd >= -beta_q( qd + alpha_q(q - q_min) )   (joint angle CBF constraint)
+                #     -qdd >= -beta_q( alpha_q(q_max - q) - qd )
+                ah_q_min = beta_q( qd + alpha_q(q - self.q_min) )
+                ah_q_max = beta_q( alpha_q(self.q_max - q) - qd )
+                self.AddJointVelCBFConstraint(qdd, ah_q_min, ah_q_max)
+       
 
         # s.t. tau_min <= tau <= tau_max
         #tau_min = -50

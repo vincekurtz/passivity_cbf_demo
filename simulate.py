@@ -33,7 +33,10 @@ planner = "simple"    # must be one of "gui", "peg", or "simple"
 #  - The "standard" method directly applies a standard task-space passivity controller.
 #  - The "constrained" approach attempts to match this controller while enforcing constraints.
 #  - "ours" modifies the reference so passivity and constraint satisfaction can be guaranteed.
-control_strategy = "standard"
+control_strategy = "ours"
+
+# Type of constraints to apply. Must be "singularity", "joint" or "none"
+constraint_type = "singularity"
 
 include_manipuland = False
 show_diagram = False
@@ -150,8 +153,10 @@ rom_ctrl = builder.AddSystem(PidController(kp=2*np.ones(rom_dof),
 rom_ctrl.set_name("RoM_controller")
 
 # Create whole-body controller
-ctrl = Gen3Controller(c_plant,dt,strategy=control_strategy)     # we use c_plant, which doesn't include objects in 
-controller = builder.AddSystem(ctrl)  # the workspace, for dynamics computations
+ctrl = Gen3Controller(c_plant,dt,     # we use c_plant, which doesn't include objects in 
+        strategy=control_strategy,    # the workspace, for dynamics computations
+        constraints=constraint_type)
+controller = builder.AddSystem(ctrl)
 
 # Connect blocks in the control diagram
 builder.Connect(                                            # planner sends target end-effector
