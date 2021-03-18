@@ -15,7 +15,7 @@ dt = 3e-3
 target_realtime_rate = 1.0
 
 # Initial joint angles
-q0 = np.array([0.0,0,np.pi/2,-np.pi/2,0.0,-np.pi/2,0])
+q0 = np.pi*np.array([-0.1,0.1,0.6,-0.5,0.2,-0.5,0])
 
 # initial end-effector pose
 x0 = np.array([np.pi-0.5,  
@@ -252,6 +252,9 @@ try:
 except KeyboardInterrupt:
     print("Simulation stopped via KeyboardInterrupt")
 
+# DEBUG
+print(mu_logger.data().T[-1])
+
 # Make some plots
 if make_plots:
     t = rom_logger.sample_times()
@@ -262,7 +265,7 @@ if make_plots:
 
     plt.figure()
     plt.plot(t[1:],mu_logger.data().T[1:], linewidth='2')
-    plt.gca().axhline(y=0.05, linewidth='2', linestyle='--', color="grey")
+    plt.gca().axhline(y=0.03, linewidth='2', linestyle='--', color="grey")
     plt.xlabel("time (s)")
     plt.ylabel("Manipulability Index")
 
@@ -310,7 +313,7 @@ if make_plots:
 
     plt.figure()
     plt.plot(t[1:], V_logger.data().T[1:], linewidth='2',label="Storage Function")
-    plt.plot(t[1:], err_logger.data().T[1:], linewidth='2',label="Output Error")
+    #plt.plot(t[1:], err_logger.data().T[1:], linewidth='2',label="Output Error")
     plt.xlabel("time (s)")
     plt.legend()
 

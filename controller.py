@@ -573,7 +573,7 @@ class Gen3Controller(LeafSystem):
         w_xdd = 1      # desired RoM input tracking weight
         w_fdes = 10    # desired task-space force tracking weight
 
-        eps = 0.05     # minimum manipulability index
+        eps = 0.03     # minimum manipulability index
 
         alpha_qd = lambda h : 1*h  # CBF class-K functions
         alpha_q = lambda h : 1*h
