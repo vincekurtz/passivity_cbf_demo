@@ -666,9 +666,9 @@ class Gen3Controller(LeafSystem):
         J_mu_dot = (J_mu - self.J_mu_last) / self.dt
 
         # DEBUG: make plot of CBF and cbf-dot
+        # TODO: use a proper log
         eps = 0.05
         h = mu - eps
-        print(h >= 0)
         if context.get_time() > 0:
 
             hdot = (h - self.h_last) / self.dt
@@ -763,11 +763,6 @@ class Gen3Controller(LeafSystem):
         rpydd_nom = RPY_nom.CalcRpyDtFromAngularVelocityInParent(wd_nom)
         self.xdd_nom = np.hstack([rpydd_nom,pdd_nom])
        
-        # DEBUG
-        #Vdot = xd_tilde.T@(Jbar.T@tau - Jbar.T@tau_g + Lambda@Q@(Jbar@xd_tilde - qd) - Lambda@xdd_nom + Kp@x_tilde)
-        #Vdot = xd_tilde.T@(Lambda@Q@Jbar@xd_tilde - Lambda@xdd_nom + Lambda@(J@qdd + Jdqd) + Kp@x_tilde)
-        #print(np.linalg.norm(xdd_nom-xdd_target))
-
         # Set arm torque outputs
         tau = tau[:-2]   # the last two elements have to do with the gripper. We'll ignore those here
                          # and set them in DoCalcGripperOutput
