@@ -28,8 +28,14 @@ x0 = np.array([np.pi-0.5,
 # High-level planner
 planner = "simple"    # must be one of "gui", "peg", or "simple"
 
-include_manipuland = False
+# Type of controller to use. Must be "standard", "constrained" or "ours".
+# 
+#  - The "standard" method directly applies a standard task-space passivity controller.
+#  - The "constrained" approach attempts to match this controller while enforcing constraints.
+#  - "ours" modifies the reference so passivity and constraint satisfaction can be guaranteed.
+control_strategy = "standard"
 
+include_manipuland = False
 show_diagram = False
 make_plots = True
 
@@ -144,7 +150,7 @@ rom_ctrl = builder.AddSystem(PidController(kp=2*np.ones(rom_dof),
 rom_ctrl.set_name("RoM_controller")
 
 # Create whole-body controller
-ctrl = Gen3Controller(c_plant,dt)     # we use c_plant, which doesn't include objects in 
+ctrl = Gen3Controller(c_plant,dt,strategy=control_strategy)     # we use c_plant, which doesn't include objects in 
 controller = builder.AddSystem(ctrl)  # the workspace, for dynamics computations
 
 # Connect blocks in the control diagram
@@ -254,9 +260,6 @@ try:
     simulator.AdvanceTo(sim_time)
 except KeyboardInterrupt:
     print("Simulation stopped via KeyboardInterrupt")
-
-# DEBUG
-print(mu_logger.data().T[-1])
 
 # Make some plots
 if make_plots:

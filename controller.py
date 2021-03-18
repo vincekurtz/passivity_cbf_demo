@@ -19,8 +19,17 @@ class Gen3Controller(LeafSystem):
                           -----------------------------
 
     """
-    def __init__(self, plant, dt):
+    def __init__(self, plant, dt, strategy="ours"):
         LeafSystem.__init__(self)
+
+        # Type of control method to use. 
+        # 
+        #  - "standard" directly applies a task-space passivity controller as a constraint.
+        #  - "constrained" attempts to match this controller as a cost subject to other constraints.
+        #  - "ours" modifies the reference so passivity and constraint satisfaction can be guaranteed.
+        assert (strategy == "ours") or (strategy == "constrained") or (strategy == "standard"), \
+                "Invalid stragety %s" % strategy
+        self.strategy = strategy
 
         self.dt = dt
         self.plant = plant
@@ -670,17 +679,19 @@ class Gen3Controller(LeafSystem):
         qdd = self.mp.NewContinuousVariables(self.plant.num_velocities(), 1, 'qdd')
         xdd_nom = self.mp.NewContinuousVariables(6,1,'xdd_nom')
 
-        # min w_xdd*|| xdd_nom - xdd_target ||^2
-        self.mp.AddQuadraticErrorCost(Q=w_xdd*np.eye(6),
-                                      x_desired=xdd_target,
-                                      vars=xdd_nom)
-       
-        # s.t. xdd_target = xdd_nom
-        #self.mp.AddLinearEqualityConstraint(np.eye(6), xdd_target, xdd_nom)
+        if self.strategy == "ours":
+            # min w_xdd*|| xdd_nom - xdd_target ||^2
+            self.mp.AddQuadraticErrorCost(Q=w_xdd*np.eye(6),
+                                          x_desired=xdd_target,
+                                          vars=xdd_nom)
+        else:
+            # s.t. xdd_target = xdd_nom
+            self.mp.AddLinearEqualityConstraint(np.eye(6), xdd_target, xdd_nom)
 
-        # min w_fdes*|| Jbar'*tau - f_des ||^2
-        self.AddTaskForceCost(w_fdes, Jbar, tau, Lambda, xdd_nom, Q, qd,
-                                xd_tilde, tau_g, Kp, x_tilde, Kd)
+        if (self.strategy == "ours") or (self.strategy == "constrained"):
+            # min w_fdes*|| Jbar'*tau - f_des ||^2
+            self.AddTaskForceCost(w_fdes, Jbar, tau, Lambda, xdd_nom, Q, qd,
+                                    xd_tilde, tau_g, Kp, x_tilde, Kd)
        
         # min w_qd*|| qdd - qdd_nom ||^2
         qdd_nom = -Kd_qd*qd
@@ -696,9 +707,10 @@ class Gen3Controller(LeafSystem):
         # s.t. M*qdd + Cqd + tau_g = tau
         self.AddDynamicsConstraint(M, qdd, Cqd, tau_g, S, tau)
 
-        # s.t. Vdot <= 0
-        self.AddVdotConstraint(xd_tilde, Lambda, Q, Jbar, xdd_nom, 
-                                            J, qdd, Jdqd, Kp, x_tilde)
+        if (self.strategy == "ours"):
+            # s.t. Vdot <= 0
+            self.AddVdotConstraint(xd_tilde, Lambda, Q, Jbar, xdd_nom, 
+                                                J, qdd, Jdqd, Kp, x_tilde)
       
         # s.t. qdd >= -alpha_qd(qd - qd_min)   (joint velocity CBF constraint)
         #     -qdd >= -alpha_qd(qd_max - qd)
@@ -711,15 +723,17 @@ class Gen3Controller(LeafSystem):
         #ah_q_min = beta_q( qd + alpha_q(q - self.q_min) )
         #ah_q_max = beta_q( alpha_q(self.q_max - q) - qd )
         #self.AddJointVelCBFConstraint(qdd, ah_q_min, ah_q_max)
-        
-        # s.t. Jbar'*tau = f_des, where
-        # f_des = Lambda*xdd_nom + Lambda*Q*(qd - Jbar*xd_tilde) + Jbar.T*tau_g 
-        #                                                   - Kp*x_tilde - Kd*xd_tilde
-        #self.AddTaskForceConstraint(Jbar, tau, Lambda, xdd_nom, Q, qd, 
-        #                               xd_tilde, tau_g, Kp, x_tilde, Kd)
+       
+        if (self.strategy == "standard"):
+            # s.t. Jbar'*tau = f_des, where
+            # f_des = Lambda*xdd_nom + Lambda*Q*(qd - Jbar*xd_tilde) + Jbar.T*tau_g 
+            #                                                   - Kp*x_tilde - Kd*xd_tilde
+            self.AddTaskForceConstraint(Jbar, tau, Lambda, xdd_nom, Q, qd, 
+                                           xd_tilde, tau_g, Kp, x_tilde, Kd)
    
-        # s.t. hdd(x,u) >= -Ka*[h(x);hd(x)]
-        self.AddSingularityCBFConstraint(q, qd, qdd, mu, J_mu, J_mu_dot, eps)
+        if (self.strategy == "ours") or (self.strategy == "constrained"):
+            # s.t. hdd(x,u) >= -Ka*[h(x);hd(x)]
+            self.AddSingularityCBFConstraint(q, qd, qdd, mu, J_mu, J_mu_dot, eps)
 
         # s.t. tau_min <= tau <= tau_max
         #tau_min = -50
