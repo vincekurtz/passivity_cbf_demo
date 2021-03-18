@@ -33,14 +33,14 @@ planner = "simple"    # must be one of "gui", "peg", or "simple"
 #  - The "standard" method directly applies a standard task-space passivity controller.
 #  - The "constrained" approach attempts to match this controller while enforcing constraints.
 #  - "ours" modifies the reference so passivity and constraint satisfaction can be guaranteed.
-control_strategy = "ours"
+control_strategy = "constrained"
 
 # Type of constraints to apply. Must be "singularity", "joint" or "none"
 constraint_type = "singularity"
 
 include_manipuland = False
 show_diagram = False
-make_plots = True
+make_plots = False
 
 #################################################
 
@@ -274,64 +274,65 @@ if make_plots:
     # Plot manipulability index
     ###########################################################
 
-    plt.figure()
+    plt.figure(figsize=(3,3))
     plt.plot(t[1:],mu_logger.data().T[1:], linewidth='2')
     plt.gca().axhline(y=0.03, linewidth='2', linestyle='--', color="grey")
+    plt.ylim(0,0.1)
     plt.xlabel("time (s)")
-    plt.ylabel("Manipulability Index")
+    plt.ylabel("$\mu(\mathbf{q})$")
 
     ###########################################################
     # Plot desired and actual end-effector pose
     ###########################################################
 
-    plt.figure()  # End effector rpy and angular velocity comparison
-    plt.subplot(2,1,1)
-    plt.plot(t, rom_logger.data()[:3,:].T,linewidth='2',linestyle='--')
-    plt.gca().set_prop_cycle(None)  # reset the color cycle
-    plt.plot(t, plant_logger.data()[:3,:].T,linewidth='2')
-    #plt.legend(['RoM - x','RoM - y','RoM - z','Plant - x','Plant - y','Plant - z'])
-    plt.xlabel("time (s)")
-    plt.ylabel("End Effector RPY")
+    #plt.figure()  # End effector rpy and angular velocity comparison
+    #plt.subplot(2,1,1)
+    #plt.plot(t, rom_logger.data()[:3,:].T,linewidth='2',linestyle='--')
+    #plt.gca().set_prop_cycle(None)  # reset the color cycle
+    #plt.plot(t, plant_logger.data()[:3,:].T,linewidth='2')
+    ##plt.legend(['RoM - x','RoM - y','RoM - z','Plant - x','Plant - y','Plant - z'])
+    #plt.xlabel("time (s)")
+    #plt.ylabel("End Effector RPY")
 
-    plt.subplot(2,1,2)
-    plt.plot(t, rom_logger.data()[6:9,:].T,linewidth='2',linestyle='--')
-    plt.gca().set_prop_cycle(None)  # reset the color cycle
-    plt.plot(t, plant_logger.data()[6:9,:].T,linewidth='2')
-    #plt.legend(['RoM - x','RoM - y','RoM - z','Plant - x','Plant - y','Plant - z'])
-    plt.xlabel("time (s)")
-    plt.ylabel("End Effector Angular Velocity")
+    #plt.subplot(2,1,2)
+    #plt.plot(t, rom_logger.data()[6:9,:].T,linewidth='2',linestyle='--')
+    #plt.gca().set_prop_cycle(None)  # reset the color cycle
+    #plt.plot(t, plant_logger.data()[6:9,:].T,linewidth='2')
+    ##plt.legend(['RoM - x','RoM - y','RoM - z','Plant - x','Plant - y','Plant - z'])
+    #plt.xlabel("time (s)")
+    #plt.ylabel("End Effector Angular Velocity")
 
-    plt.figure()  # End effector position and velocity comparison
-    plt.subplot(2,1,1)
-    plt.plot(t, rom_logger.data()[3:6,:].T,linewidth='2',linestyle='--')
-    plt.gca().set_prop_cycle(None)  # reset the color cycle
-    plt.plot(t, plant_logger.data()[3:6,:].T,linewidth='2')
-    #plt.legend(['RoM - x','RoM - y','RoM - z','Plant - x','Plant - y','Plant - z'])
-    plt.xlabel("time (s)")
-    plt.ylabel("End Effector Position")
+    #plt.figure()  # End effector position and velocity comparison
+    #plt.subplot(2,1,1)
+    #plt.plot(t, rom_logger.data()[3:6,:].T,linewidth='2',linestyle='--')
+    #plt.gca().set_prop_cycle(None)  # reset the color cycle
+    #plt.plot(t, plant_logger.data()[3:6,:].T,linewidth='2')
+    ##plt.legend(['RoM - x','RoM - y','RoM - z','Plant - x','Plant - y','Plant - z'])
+    #plt.xlabel("time (s)")
+    #plt.ylabel("End Effector Position")
 
-    plt.subplot(2,1,2)
-    plt.plot(t, rom_logger.data()[9:,:].T,linewidth='2',linestyle='--')
-    plt.gca().set_prop_cycle(None)  # reset the color cycle
-    plt.plot(t, plant_logger.data()[9:,:].T,linewidth='2')
-    #plt.legend(['RoM - x','RoM - y','RoM - z','Plant - x','Plant - y','Plant - z'])
-    plt.xlabel("time (s)")
-    plt.ylabel("End Effector Velocity")
+    #plt.subplot(2,1,2)
+    #plt.plot(t, rom_logger.data()[9:,:].T,linewidth='2',linestyle='--')
+    #plt.gca().set_prop_cycle(None)  # reset the color cycle
+    #plt.plot(t, plant_logger.data()[9:,:].T,linewidth='2')
+    ##plt.legend(['RoM - x','RoM - y','RoM - z','Plant - x','Plant - y','Plant - z'])
+    #plt.xlabel("time (s)")
+    #plt.ylabel("End Effector Velocity")
 
     ###########################################################
     # Plot storage function and output error
     ###########################################################
 
-    plt.figure()
+    plt.figure(figsize=(3,3))
     plt.subplot(2,1,1)
     plt.plot(t[1:], V_logger.data().T[1:], linewidth='2',label="Storage Function")
     #plt.plot(t[1:], err_logger.data().T[1:], linewidth='2',label="Output Error")
-    plt.ylabel("Storage Function ($V$)")
+    plt.ylabel("$V$")
 
     plt.subplot(2,1,2)
     plt.plot(t[1:], Vdot_logger.data().T[1:], linewidth='2')
     plt.gca().axhline(0, linewidth='2', linestyle="--", color="grey")
     plt.xlabel("time (s)")
-    plt.ylabel("Storage Function Dot ($\dot{V}$)")
+    plt.ylabel("$\dot{V}$")
 
     plt.show()
