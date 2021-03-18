@@ -6,7 +6,7 @@ from reduced_order_model import ReducedOrderModelPlant
 from controller import Gen3Controller
 from planners import SimplePlanner
 
-def setup_colab_simulation(controller_type, constraint_type, install_path):
+def setup_colab_simulation(controller_type, constraint_type, install_path, zmq_url):
     """
     A convienience function for setting up a simulation on Google Colab. 
     Does basically the same thing as simulate.py, but interfaces with meshcat
@@ -182,7 +182,10 @@ def setup_colab_simulation(controller_type, constraint_type, install_path):
             scene_graph.get_source_pose_port(ee_source))
 
     # Set up the Visualizer
-    # TODO: start and use meshcat
+    meshcat = ConnectMeshcatVisualizer(builder=builder,
+                                        zmq_url=zmq_url,
+                                        scene_graph=scene_graph,
+                                        output_port=scene_graph.get_query_output_port())
 
     # Compile the diagram: no adding control blocks from here on out
     diagram = builder.Build()
