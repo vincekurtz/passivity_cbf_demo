@@ -31,7 +31,7 @@ planner = "gui"    # must be one of "gui", "peg", or "simple"
 include_manipuland = False
 
 show_diagram = False
-make_plots = False
+make_plots = True
 
 #################################################
 
@@ -215,6 +215,9 @@ V_logger.set_name("V_logger")
 err_logger = LogOutput(controller.GetOutputPort("error"),builder)
 err_logger.set_name("error_logger")
 
+mu_logger = LogOutput(controller.GetOutputPort("manipulability_index"),builder)
+mu_logger.set_name("mu_logger")
+
 # Compile the diagram: no adding control blocks from here on out
 diagram = builder.Build()
 diagram.set_name("diagram")
@@ -249,24 +252,23 @@ try:
 except KeyboardInterrupt:
     print("Simulation stopped via KeyboardInterrupt")
 
-# DEBUG
-plt.subplot(2,1,1)
-plt.plot(controller.hs)
-plt.ylabel('h')
-plt.xlabel('timestep')
-
-plt.subplot(2,1,2)
-plt.plot(controller.hdots, label="ground truth")
-plt.plot(controller.hdots_est, label="estimate")
-plt.ylabel("hdot)")
-plt.xlabel('timestep')
-plt.legend()
-
-plt.show()
-
 # Make some plots
 if make_plots:
     t = rom_logger.sample_times()
+
+    ###########################################################
+    # Plot manipulability index
+    ###########################################################
+
+    plt.figure()
+    plt.plot(t[1:],mu_logger.data().T[1:], linewidth='2')
+    plt.gca().axhline(y=0.05, linewidth='2', linestyle='--', color="grey")
+    plt.xlabel("time (s)")
+    plt.ylabel("Manipulability Index")
+
+    ###########################################################
+    # Plot desired and actual end-effector pose
+    ###########################################################
 
     plt.figure()  # End effector rpy and angular velocity comparison
     plt.subplot(2,1,1)
@@ -302,14 +304,13 @@ if make_plots:
     plt.xlabel("time (s)")
     plt.ylabel("End Effector Velocity")
 
-    plt.figure()  # Simulation function and error comparison
-    plt.plot(t, V_logger.data().T, linewidth='2',label="Storage Function")
-    plt.plot(t, err_logger.data().T, linewidth='2',label="Output Error")
+    ###########################################################
+    # Plot storage function and output error
+    ###########################################################
 
-    # Error bound is initial simulation function value, scaled by minimum eigenvalue of Kp
-    #err_bound = V_logger.data()[0,0]/np.min(np.linalg.eigvals(controller.Kp))
-    #plt.hlines(err_bound,t[0],t[-1],label="Error Bound",color="grey",linewidth=2,linestyle="--")
-
+    plt.figure()
+    plt.plot(t[1:], V_logger.data().T[1:], linewidth='2',label="Storage Function")
+    plt.plot(t[1:], err_logger.data().T[1:], linewidth='2',label="Output Error")
     plt.xlabel("time (s)")
     plt.legend()
 

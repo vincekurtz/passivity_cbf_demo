@@ -103,6 +103,13 @@ class Gen3Controller(LeafSystem):
                 BasicVector(1),
                 self.DoCalcErrOutput)
 
+        # Output port for manipulability index (for logging)
+        self.mu = 0
+        self.DeclareVectorOutputPort(
+                "manipulability_index",
+                BasicVector(1),
+                self.DoCalcManipulabilityOutput)
+
         # Relevant frames
         self.world_frame = self.plant.world_frame()
         self.end_effector_frame = self.plant.GetFrameByName("end_effector_link")
@@ -114,13 +121,8 @@ class Gen3Controller(LeafSystem):
         # turn were loaded from a urdf
         self.GetJointLimits()
 
-        # DEBUG
-        self.h_last = None
+        # Store manipulability jacobian for numerical computation of Jd_mu
         self.J_mu_last = 0
-
-        self.hs = []
-        self.hdots = []
-        self.hdots_est = []
 
     def GetJointLimits(self):
         """
@@ -208,31 +210,7 @@ class Gen3Controller(LeafSystem):
 
         return self.mp.AddLinearEqualityConstraint(A,b,x)
     
-    def AddVdotConstraint(self, Jbar, tau, Lambda, xdd_nom, Q, qd, 
-                                            xd_tilde, tau_g, Kp, x_tilde):
-        """
-        Add a linear constraint
-
-            Vdot <= 0
-
-        to the whole-body QP, where Vdot is the time-derivative of the storage
-        function 
-
-            V = 1/2 xd_tilde'*Lambda*xd_tilde + 1/2 x_tilde'*Kp*x_tilde.
-
-        Written in terms of decision variables xdd_nom and tau.
-        """
-        # We'll write as A*x <= b
-        A = xd_tilde.T@np.hstack([Jbar.T, -Lambda])[np.newaxis]
-        b = -xd_tilde.T@(-Jbar.T@tau_g + Lambda@Q@(Jbar@xd_tilde-qd) + Kp@x_tilde)
-        x = np.vstack([tau, xdd_nom])
-
-        lb = np.asarray([-np.inf]).reshape(1,1)
-        ub = np.asarray([b]).reshape(1,1)
-
-        return self.mp.AddLinearConstraint(A=A, lb=lb, ub=ub, vars=x)
-    
-    def AddVdotConstraint2(self, xd_tilde, Lambda, Q, Jbar, xdd_nom, 
+    def AddVdotConstraint(self, xd_tilde, Lambda, Q, Jbar, xdd_nom, 
                                                 J, qdd, Jdqd, Kp, x_tilde):
         """
         Add a linear constraint
@@ -541,6 +519,12 @@ class Gen3Controller(LeafSystem):
         """
         output.SetFromVector([self.err])
 
+    def DoCalcManipulabilityOutput(self, context, output):
+        """
+        Output the current manipulability index.
+        """
+        output.SetFromVector([self.mu])
+
     def SetRomOutput(self, context, output):
         output.SetFromVector(self.xdd_nom)
 
@@ -588,6 +572,8 @@ class Gen3Controller(LeafSystem):
         w_qd = 1e-3    # joint velocity damping weight
         w_xdd = 1      # desired RoM input tracking weight
         w_fdes = 10    # desired task-space force tracking weight
+
+        eps = 0.05     # minimum manipulability index
 
         alpha_qd = lambda h : 1*h  # CBF class-K functions
         alpha_q = lambda h : 1*h
@@ -665,22 +651,6 @@ class Gen3Controller(LeafSystem):
         J_mu = self.CalcManipulabilityJacobian(J, q, dJdq)
         J_mu_dot = (J_mu - self.J_mu_last) / self.dt
 
-        # DEBUG: make plot of CBF and cbf-dot
-        # TODO: use a proper log
-        eps = 0.05
-        h = mu - eps
-        if context.get_time() > 0:
-
-            hdot = (h - self.h_last) / self.dt
-
-            hdot_est = J_mu @ qd
-           
-            self.hs.append(h)
-            self.hdots.append(hdot)
-            self.hdots_est.append(hdot_est)
-
-        self.h_last = h
-
         # Solve QP to find joint torques and input to RoM
         self.mp = MathematicalProgram()
         tau = self.mp.NewContinuousVariables(self.plant.num_actuators(), 1, 'tau')
@@ -714,9 +684,7 @@ class Gen3Controller(LeafSystem):
         self.AddDynamicsConstraint(M, qdd, Cqd, tau_g, S, tau)
 
         # s.t. Vdot <= 0
-        #self.AddVdotConstraint(Jbar, tau, Lambda, xdd_nom, Q, qd, 
-        #                                xd_tilde, tau_g, Kp, x_tilde)
-        self.AddVdotConstraint2(xd_tilde, Lambda, Q, Jbar, xdd_nom, 
+        self.AddVdotConstraint(xd_tilde, Lambda, Q, Jbar, xdd_nom, 
                                             J, qdd, Jdqd, Kp, x_tilde)
       
         # s.t. qdd >= -alpha_qd(qd - qd_min)   (joint velocity CBF constraint)
@@ -773,6 +741,7 @@ class Gen3Controller(LeafSystem):
         self.x = x
         self.xd = xd
         self.err = x_tilde.T@x_tilde
+        self.mu = mu
 
         # Record manipulability jacobian for numerical computation of \dot{J_\mu}
         self.J_mu_last = J_mu
