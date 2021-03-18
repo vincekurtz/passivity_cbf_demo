@@ -6,7 +6,7 @@ from reduced_order_model import ReducedOrderModelPlant
 from controller import Gen3Controller
 from planners import SimplePlanner
 
-def setup_colab_simulation(controller_type, constraint_type):
+def setup_colab_simulation(controller_type, constraint_type, install_path):
     """
     A convienience function for setting up a simulation on Google Colab. 
     Does basically the same thing as simulate.py, but interfaces with meshcat
@@ -42,7 +42,7 @@ def setup_colab_simulation(controller_type, constraint_type):
     #################################################
 
     # Find the (local) description file relative to drake
-    robot_description_path = target_path + "/models/gen3_7dof/urdf/GEN3_URDF_V12.urdf"
+    robot_description_path = install_path + "/models/gen3_7dof/urdf/GEN3_URDF_V12.urdf"
     drake_path = getDrakePath()
     robot_description_file = "drake/" + os.path.relpath(robot_description_path, start=drake_path)
 
@@ -62,7 +62,7 @@ def setup_colab_simulation(controller_type, constraint_type):
     c_gen3 = Parser(plant=c_plant).AddModelFromFile(robot_urdf,"gen3")
 
     # Load the gripper model from a urdf file
-    gripper_file = "drake/" + os.path.relpath(target_path + "/models/hande_gripper/urdf/robotiq_hande.urdf", start=drake_path)
+    gripper_file = "drake/" + os.path.relpath(install_path + "/models/hande_gripper/urdf/robotiq_hande.urdf", start=drake_path)
     gripper_urdf = FindResourceOrThrow(gripper_file)
     gripper = Parser(plant=plant).AddModelFromFile(gripper_urdf,"gripper")
     c_gripper = Parser(plant=c_plant).AddModelFromFile(gripper_urdf,"gripper")
@@ -103,7 +103,7 @@ def setup_colab_simulation(controller_type, constraint_type):
     ee_frame = GeometryFrame("ee")
     scene_graph.RegisterFrame(ee_source, ee_frame)
 
-    ee_shape = Mesh(os.path.abspath(target_path + "/models/hande_gripper/meshes/hand-e_with_fingers.obj"),scale=1e-3)
+    ee_shape = Mesh(os.path.abspath(install_path + "/models/hande_gripper/meshes/hand-e_with_fingers.obj"),scale=1e-3)
     ee_color = np.array([0.1,0.1,0.1,0.4])
     X_ee = RigidTransform()
 
