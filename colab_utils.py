@@ -4,7 +4,7 @@ import os
 from pydrake.all import *
 from reduced_order_model import ReducedOrderModelPlant
 from controller import Gen3Controller
-from planners import SimplePlanner
+from planners import JupyterGuiPlanner
 
 def setup_colab_simulation(controller_type, constraint_type, install_path, zmq_url):
     """
@@ -117,7 +117,7 @@ def setup_colab_simulation(controller_type, constraint_type, install_path, zmq_u
     scene_graph.RegisterGeometry(ee_source, ee_frame.id(), ee_geometry)
 
     # Create planner block, which determines target end-effector setpoints and gripper state
-    rom_planner = builder.AddSystem(SimplePlanner())
+    rom_planner = builder.AddSystem(JupyterGuiPlanner())
     rom_planner.set_name("High-level Planner")
 
     # Create reduced-order model (double integrator)
@@ -215,4 +215,12 @@ def setup_colab_simulation(controller_type, constraint_type, install_path, zmq_u
 
     print("Ready to Simulate!")
 
-    return simulator
+    return simulator, rom_planner.gui
+
+def display_gui(widget_list):
+    """
+    Display a list of ipywidgets. This allows us to show a display in a different
+    place than where we created it.
+    """
+    [display(widget) for widget in widget_list]
+

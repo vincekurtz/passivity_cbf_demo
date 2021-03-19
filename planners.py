@@ -3,6 +3,7 @@
 from pydrake.all import *
 import numpy as np
 import tkinter as tk
+import ipywidgets as widgets
 
 class SimplePlanner(LeafSystem):
     """ This is a simple system block with no inputs. It simply outpus
@@ -48,6 +49,96 @@ class SimplePlanner(LeafSystem):
         gripper_closed = False
         output.set_value(gripper_closed)
 
+class JupyterGuiPlanner(SimplePlanner):
+    """ 
+    This is a simple system block with no inputs. It simply outpus
+
+        1) A desired end-effector pose [roll;pitch;yaw;x;y;z] (and pose dot)
+        2) A desired gripper state (open or closed)
+
+    based on user input from a jupyter GUI.
+    """
+    def __init__(self):
+        SimplePlanner.__init__(self)
+        
+        # Set nominal poses and gripper state
+        self.pose_nom = np.array([np.pi,  
+                                  0.0,
+                                  np.pi/2,
+                                  0.2,
+                                  0.4,
+                                  0.50])
+        self.twist_nom = np.zeros(6)
+
+        self.gripper_closed = False
+
+        # Set up interactive display using ipywidgets
+        print("setting up display")
+        self.roll = widgets.FloatSlider(
+                                value=self.pose_nom[0],
+                                min=-2*np.pi,
+                                max=2*np.pi,
+                                step=0.01,
+                                description="Roll",
+                                orientation='horizontal',
+                                readout=True)
+        self.pitch = widgets.FloatSlider(
+                                value=self.pose_nom[1],
+                                min=-np.pi/2+0.3,    # restrictive pitch limits to 
+                                max=np.pi/2-0.3,        # avoid gimbal lock issues
+                                step=0.01,
+                                description="Pitch",
+                                orientation='horizontal',
+                                readout=True)
+        self.yaw = widgets.FloatSlider(
+                                value=self.pose_nom[2],
+                                min=-2*np.pi,
+                                max=2*np.pi,
+                                step=0.01,
+                                description="Yaw",
+                                orientation='horizontal',
+                                readout=True)
+        self.x = widgets.FloatSlider(
+                                value=self.pose_nom[3],
+                                min=-1.0,
+                                max=1.0,
+                                step=0.01,
+                                description="X",
+                                orientation='horizontal',
+                                readout=True)
+        self.y = widgets.FloatSlider(
+                                value=self.pose_nom[4],
+                                min=-1.0,
+                                max=1.0,
+                                step=0.01,
+                                description="Y",
+                                orientation='horizontal',
+                                readout=True)
+        self.z = widgets.FloatSlider(
+                                value=self.pose_nom[5],
+                                min=0.0,
+                                max=1.0,
+                                step=0.01,
+                                description="Z",
+                                orientation='horizontal',
+                                readout=True)
+
+        # Save sliders in a list so we can display them later
+        self.gui = [self.roll, self.pitch, self.yaw, self.x, self.y, self.z]
+
+    def SetEndEffectorOutput(self, context, output):
+        target_state = np.hstack([
+            self.roll.value,
+            self.pitch.value,
+            self.yaw.value,
+            self.x.value,
+            self.y.value,
+            self.z.value,
+            self.twist_nom])
+        output.SetFromVector(target_state)
+
+    def SetGripperOutput(self, context, output):
+        output.set_value(self.gripper_closed)
 
 class GuiPlanner(SimplePlanner):
     """ 
