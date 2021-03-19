@@ -74,7 +74,7 @@ class JupyterGuiPlanner(SimplePlanner):
         print("setting up display")
         self.roll = widgets.FloatSlider(
                                 value=self.pose_nom[0],
-                                min=-2*np.pi,
+                                min=0,
                                 max=2*np.pi,
                                 step=0.01,
                                 description="Roll",
@@ -83,14 +83,14 @@ class JupyterGuiPlanner(SimplePlanner):
         self.pitch = widgets.FloatSlider(
                                 value=self.pose_nom[1],
                                 min=-np.pi/2+0.3,    # restrictive pitch limits to 
-                                max=np.pi/2-0.3,        # avoid gimbal lock issues
+                                max=np.pi/2-0.3,     # avoid gimbal lock issues
                                 step=0.01,
                                 description="Pitch",
                                 orientation='horizontal',
                                 readout=True)
         self.yaw = widgets.FloatSlider(
                                 value=self.pose_nom[2],
-                                min=-2*np.pi,
+                                min=0,
                                 max=2*np.pi,
                                 step=0.01,
                                 description="Yaw",
