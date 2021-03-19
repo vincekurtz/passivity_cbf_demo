@@ -10,7 +10,7 @@ from planners import GuiPlanner, SimplePlanner, PegPlanner
 
 ############## Setup Parameters #################
 
-sim_time = 5
+sim_time = np.inf
 dt = 3e-3
 target_realtime_rate = 1.0
 
@@ -26,14 +26,14 @@ x0 = np.array([np.pi-0.5,
                0.5])
 
 # High-level planner
-planner = "simple"    # must be one of "gui", "peg", or "simple"
+planner = "gui"    # must be one of "gui", "peg", or "simple"
 
 # Type of controller to use. Must be "standard", "constrained" or "ours".
 # 
 #  - The "standard" method directly applies a standard task-space passivity controller.
 #  - The "constrained" approach attempts to match this controller while enforcing constraints.
 #  - "ours" modifies the reference so passivity and constraint satisfaction can be guaranteed.
-control_strategy = "constrained"
+control_strategy = "ours"
 
 # Type of constraints to apply. Must be "singularity", "joint" or "none"
 constraint_type = "singularity"

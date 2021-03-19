@@ -147,8 +147,7 @@ class Gen3Controller(LeafSystem):
 
     def GetJointLimits(self):
         """
-        Iterate through self.plant to establish joint angle
-        and velocity limits. 
+        Establish joint angle and velocity limits. 
 
         Sets:
 
@@ -158,32 +157,11 @@ class Gen3Controller(LeafSystem):
             self.qd_max
 
         """
-        q_min = []
-        q_max = []
-        qd_min = []
-        qd_max = []
+        self.q_min = np.array([ -np.inf, -2.41,  -np.inf, -2.66,  -np.inf, -2.23,  -np.inf,  -np.inf,  -np.inf])
+        self.q_max = np.array([ np.inf, 2.41,  np.inf, 2.66,  np.inf, 2.23,  np.inf,  np.inf,  np.inf])
 
-        joint_indices = self.plant.GetJointIndices(self.arm_index)
-
-        for idx in joint_indices:
-            joint = self.plant.get_joint(idx)
-            
-            if joint.type_name() == "revolute":  # ignore the joint welded to the world
-                q_min.append(joint.position_lower_limit())
-                q_max.append(joint.position_upper_limit())
-                qd_min.append(joint.velocity_lower_limit())
-                qd_max.append(joint.velocity_upper_limit())
-
-        # Add (nonexistant) joint limits for the gripper
-        q_min.extend([-np.inf, -np.inf])
-        q_max.extend([np.inf, np.inf])
-        qd_min.extend([-np.inf, -np.inf])
-        qd_max.extend([np.inf, np.inf])
-
-        self.q_min = np.array(q_min)
-        self.q_max = np.array(q_max)
-        self.qd_min = np.array(qd_min)
-        self.qd_max = np.array(qd_max)
+        self.qd_min = np.array([-0.8727, -0.8727, -0.8727, -0.8727, -0.8727, -0.8727, -0.8727, -np.inf, -np.inf])
+        self.qd_max = np.array([0.8727, 0.8727, 0.8727, 0.8727, 0.8727, 0.8727, 0.8727, np.inf, np.inf])
 
     def AddTaskForceCost(self, w, Jbar, tau, Lambda, xdd_nom, Q, qd,
                                     xd_tilde, tau_g, Kp, x_tilde, Kd):

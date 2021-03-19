@@ -49,7 +49,6 @@
         <parent link="base_link" />
         <child link="shoulder_link" />
         <axis xyz="0 0 1" />
-        <limit effort="39" velocity="0.8727" />
     </joint>
     <link name="half_arm_1_link">
         <inertial>
@@ -78,7 +77,6 @@
         <parent link="shoulder_link" />
         <child link="half_arm_1_link" />
         <axis xyz="0 0 1" />
-        <limit lower="-2.41" upper="2.41" effort="39" velocity="0.8727" />
     </joint>
     <link name="half_arm_2_link">
         <inertial>
@@ -107,7 +105,6 @@
         <parent link="half_arm_1_link" />
         <child link="half_arm_2_link" />
         <axis xyz="0 0 1" />
-        <limit effort="39" velocity="0.8727" />
     </joint>
     <link name="forearm_link">
         <inertial>
@@ -136,7 +133,6 @@
         <parent link="half_arm_2_link" />
         <child link="forearm_link" />
         <axis xyz="0 0 1" />
-        <limit lower="-2.66" upper="2.66" effort="39" velocity="0.8727" />
     </joint>
     <link name="spherical_wrist_1_link">
         <inertial>
@@ -165,7 +161,6 @@
         <parent link="forearm_link" />
         <child link="spherical_wrist_1_link" />
         <axis xyz="0 0 1" />
-        <limit effort="9" velocity="0.8727" />
     </joint>
     <link name="spherical_wrist_2_link">
         <inertial>
@@ -194,7 +189,6 @@
         <parent link="spherical_wrist_1_link" />
         <child link="spherical_wrist_2_link" />
         <axis xyz="0 0 1" />
-        <limit lower="-2.23" upper="2.23" effort="9" velocity="0.8727" />
     </joint>
     <link name="bracelet_no_vision_link">
         <inertial>
@@ -223,7 +217,6 @@
         <parent link="spherical_wrist_2_link" />
         <child link="bracelet_no_vision_link" />
         <axis xyz="0 0 1" />
-        <limit effort="9" velocity="0.8727" />
     </joint>
     <link name="end_effector_link" />
     <joint name="EndEffector" type="fixed">
