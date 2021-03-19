@@ -29,15 +29,20 @@ def setup_colab_simulation(controller_type, constraint_type, install_path, zmq_u
                    0.3,
                    0.5])
 
+    # Map controller_type and constraint_type strings used in colab to the strings used
+    # for differentiating controller and constraint types by the controller
+    ctrl_dict = {"Unconstrained":"standard", "Standard":"constrained", "Passivity Guaranteed":"ours"}
+    cons_dict = {"Singularity Avoidance":"singularity", "Joint Limits":"joint", "None":"none"}
+
     # Type of controller to use. Must be "standard", "constrained" or "ours".
     # 
     #  - The "standard" method directly applies a standard task-space passivity controller.
     #  - The "constrained" approach attempts to match this controller while enforcing constraints.
     #  - "ours" modifies the reference so passivity and constraint satisfaction can be guaranteed.
-    control_strategy = "constrained"
+    control_strategy = ctrl_dict[controller_type]
 
     # Type of constraints to apply. Must be "singularity", "joint" or "none"
-    constraint_type = "singularity"
+    constraint_type = cons_dict[constraint_type]
 
     #################################################
 
