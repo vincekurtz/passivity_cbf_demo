@@ -70,8 +70,6 @@ class JupyterGuiPlanner(SimplePlanner):
                                   0.50])
         self.twist_nom = np.zeros(6)
 
-        self.gripper_closed = False
-
         # Set up interactive display using ipywidgets
         print("setting up display")
         self.roll = widgets.FloatSlider(
@@ -123,8 +121,12 @@ class JupyterGuiPlanner(SimplePlanner):
                                 orientation='horizontal',
                                 readout=True)
 
+        self.gripper = widgets.ToggleButton(
+                                value=False,
+                                description="Toggle Gripper")
+
         # Save sliders in a list so we can display them later
-        self.gui = [self.roll, self.pitch, self.yaw, self.x, self.y, self.z]
+        self.gui = [self.roll, self.pitch, self.yaw, self.x, self.y, self.z, self.gripper]
 
     def SetEndEffectorOutput(self, context, output):
         target_state = np.hstack([
@@ -138,7 +140,7 @@ class JupyterGuiPlanner(SimplePlanner):
         output.SetFromVector(target_state)
 
     def SetGripperOutput(self, context, output):
-        output.set_value(self.gripper_closed)
+        output.set_value(self.gripper.value)
 
 class GuiPlanner(SimplePlanner):
     """ 
