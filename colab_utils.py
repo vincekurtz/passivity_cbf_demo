@@ -6,6 +6,10 @@ from reduced_order_model import ReducedOrderModelPlant
 from controller import Gen3Controller
 from planners import JupyterGuiPlanner
 
+# Ignore warning about invalid halfspace geometry
+import warnings
+warnings.filterwarnings("ignore", category=UserWarning)
+
 def setup_colab_simulation(controller_type, constraint_type, install_path, zmq_url, include_manipuland=False):
     """
     A convienience function for setting up a simulation on Google Colab. 
