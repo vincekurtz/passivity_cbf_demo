@@ -6,12 +6,19 @@ from reduced_order_model import ReducedOrderModelPlant
 from controller import Gen3Controller
 from planners import JupyterGuiPlanner
 
-def setup_colab_simulation(controller_type, constraint_type, install_path, zmq_url):
+def setup_colab_simulation(controller_type, constraint_type, install_path, zmq_url, include_manipuland=False):
     """
     A convienience function for setting up a simulation on Google Colab. 
     Does basically the same thing as simulate.py, but interfaces with meshcat
     rather than DrakeVisualizer and uses jupyter widgets rather than tkinter
     for a gui. 
+
+    @param controller_type     String indicating why type of controller to use
+    @param constraint_type     String indicating what types of contstraints to apply
+    @param install_path        Path from where the code is being run to this directory
+    @param zmq_url             Reference URL for connecting to meshcat
+    @param include_manipuland  (optional) boolean indicating whether to include a simple peg to manipulate in the scene
+
     """
     ############## Setup Parameters #################
 
@@ -98,6 +105,11 @@ def setup_colab_simulation(controller_type, constraint_type, install_path, zmq_u
             HalfSpace(),
             "ground_visual",
             np.array([0.5,0.5,0.5,0.0]))    # Color set to be completely transparent
+
+    # Load an object to manipulate
+    if include_manipuland:
+        manipuland_sdf = install_path + "/models/manipulands/peg.sdf"
+        manipuland = Parser(plant=plant).AddModelFromFile(manipuland_sdf,"manipuland")
 
     c_plant.Finalize()
     plant.Finalize()
@@ -210,9 +222,10 @@ def setup_colab_simulation(controller_type, constraint_type, install_path, zmq_u
     rom_context = diagram.GetMutableSubsystemContext(rom, diagram_context)
     rom_context.SetContinuousState(np.hstack([x0,np.zeros(6,)]))
 
-    # Run the simulation
-    simulator.Initialize()
+    if include_manipuland:
+        plant.SetPositions(plant_context, manipuland, np.array([0.7,0,0.7,0,-0.0,0.5,0.1]))
 
+    simulator.Initialize()
     print("Ready to Simulate!")
 
     return simulator, rom_planner.gui
