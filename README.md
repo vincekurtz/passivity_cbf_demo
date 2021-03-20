@@ -1,12 +1,12 @@
 # Passivity-Based Manipulator Control with Guaranteed Singularity Avoidance
 
-This repository contains code for demonstrating a new approach to passivity-based control of robot manipulators, which can guarantee both passivity and constraint satisfaction. We focus in particular on designing control barrier functions to avoid kinematic singularities. 
+This repository contains code for demonstrating a new approach to passivity-based control (PBC) of robot manipulators, which can guarantee both passivity and constraint satisfaction. We focus in particular on designing control barrier functions to avoid kinematic singularities. 
 
 **Run the online interactive version on [Google Colab here](https://colab.research.google.com/github/vincekurtz/passivity_cbf_demo/blob/master/colab.ipynb)**
 
 | ![](standard_constrained.gif)| ![](ours.gif)         | 
 |:----------------------------:|:---------------------:|
-| *Standard Constrained PBC*   | *Proposed Controller* |
+| *Standard Constrained PBC*   | *Proposed Approach* |
 
 ## Dependencies
 
