@@ -1,10 +1,12 @@
 # Passivity-Based Manipulator Control with Guaranteed Singularity Avoidance
 
-A demonstration using [Drake](https://drake.mit.edu/) and a simulated [Kinova Gen3](https://www.kinovarobotics.com/en/products/gen3-robot) robot arm. 
+This repository contains code for demonstrating a new approach to passivity-based control of robot manipulators, which can guarantee both passivity and constraint satisfaction. We focus in particular on designing control barrier functions to avoid kinematic singularities. 
 
-This repository contains code for demonstrating a new approach to passivity-based control of robot manipulators, which can guarantee both passivity and constraint satisfaction. We focus in particular on using control barrier functions to avoid kinematic singularities. 
+**Run the online interactive version on [Google Colab here](https://colab.research.google.com/github/vincekurtz/passivity_cbf_demo/blob/master/colab.ipynb)**
 
-**Run an online interactive version of the demonstraion on [Google Colab here](https://colab.research.google.com/github/vincekurtz/passivity_cbf_demo/blob/master/colab.ipynb)**
+| ![](standard_constrained.gif)| ![](ours.gif)         | 
+|:----------------------------:|:---------------------:|
+| *Standard Constrained PBC*   | *Proposed Controller* |
 
 ## Dependencies
 
