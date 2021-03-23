@@ -11,9 +11,20 @@ class SimplePlanner(LeafSystem):
         1) A desired end-effector pose [roll;pitch;yaw;x;y;z] (and pose dot)
         2) A desired gripper state (open or closed)
     """
-    def __init__(self):
+    def __init__(self, frame_id):
         LeafSystem.__init__(self)
-        
+
+        # The target pose must be a class-level variable, since
+        # we use it to set geometry info as well
+        # Set nominal poses and gripper state
+        self.pose_nom = np.array([np.pi,  
+                                  0.0,
+                                  np.pi/2,
+                                  0.2,
+                                  0.4,
+                                  0.4])
+        self.twist_nom = np.zeros(6)
+
         # Declare Drake input and output ports
         self.DeclareVectorOutputPort(
                 "end_effector_setpoint",
@@ -25,29 +36,50 @@ class SimplePlanner(LeafSystem):
                 lambda : AbstractValue.Make(True),
                 self.SetGripperOutput)
 
+        # Geometry output port for visualization
+        self.frame_id = frame_id
+        fpv = FramePoseVector()
+        fpv.set_value(self.frame_id, RigidTransform())
+
+        self.DeclareAbstractOutputPort(
+                "target_geometry",
+                lambda: AbstractValue.Make(fpv),
+                self.SetGeometryOutput)
+
     def SetEndEffectorOutput(self, context, output):
         if context.get_time() < 5:
-            target_pose = np.array([np.pi-0.5,  
+            self.pose_nom = np.array([np.pi-0.5,  
                                     0.0,
                                     np.pi/2,
                                     0.1,
                                     0.8,
                                     0.50])
         else:
-            target_pose = np.array([np.pi-0.5,  
+            self.pose_nom = np.array([np.pi-0.5,  
                                     0.0,
                                     np.pi/2,
                                     0.0,
                                    -0.5,
                                     0.50])
-        target_twist = np.zeros(6)
 
-        target_state = np.hstack([target_pose,target_twist])
+        target_state = np.hstack([self.pose_nom,self.twist_nom])
         output.SetFromVector(target_state)
 
     def SetGripperOutput(self, context, output):
         gripper_closed = False
         output.set_value(gripper_closed)
+
+    def SetGeometryOutput(self, context, output):
+        """
+        Send the target pose as a geometry output for visualizing the target pose.
+        """
+        fpv = output.get_mutable_value()
+
+        X = RigidTransform()
+        X.set_rotation(RollPitchYaw(self.pose_nom[:3]))
+        X.set_translation(self.pose_nom[3:])
+
+        fpv.set_value(self.frame_id, X)
 
 class JupyterGuiPlanner(SimplePlanner):
     """ 
@@ -58,18 +90,9 @@ class JupyterGuiPlanner(SimplePlanner):
 
     based on user input from a jupyter GUI.
     """
-    def __init__(self):
-        SimplePlanner.__init__(self)
+    def __init__(self, frame_id):
+        SimplePlanner.__init__(self, frame_id)
         
-        # Set nominal poses and gripper state
-        self.pose_nom = np.array([np.pi,  
-                                  0.0,
-                                  np.pi/2,
-                                  0.2,
-                                  0.4,
-                                  0.50])
-        self.twist_nom = np.zeros(6)
-
         # Set up interactive display using ipywidgets
         print("setting up display")
         self.roll = widgets.FloatSlider(
@@ -129,14 +152,14 @@ class JupyterGuiPlanner(SimplePlanner):
         self.gui = [self.roll, self.pitch, self.yaw, self.x, self.y, self.z, self.gripper]
 
     def SetEndEffectorOutput(self, context, output):
-        target_state = np.hstack([
+        self.pose_nom = np.hstack([  # need to update this for geometry output
             self.roll.value,
             self.pitch.value,
             self.yaw.value,
             self.x.value,
             self.y.value,
-            self.z.value,
-            self.twist_nom])
+            self.z.value])
+        target_state = np.hstack([self.pose_nom, self.twist_nom])
         output.SetFromVector(target_state)
 
     def SetGripperOutput(self, context, output):
@@ -151,17 +174,8 @@ class GuiPlanner(SimplePlanner):
 
     based on user input from a gui.
     """
-    def __init__(self):
-        SimplePlanner.__init__(self)
-
-        # Set nominal poses and gripper state
-        self.pose_nom = np.array([np.pi,  
-                                  0.0,
-                                  np.pi/2,
-                                  0.2,
-                                  0.4,
-                                  0.50])
-        self.twist_nom = np.zeros(6)
+    def __init__(self, frame_id):
+        SimplePlanner.__init__(self, frame_id)
 
         self.gripper_closed = False
 
@@ -260,85 +274,15 @@ class GuiPlanner(SimplePlanner):
         self.window.update()
 
     def SetEndEffectorOutput(self, context, output):
-        target_state = np.hstack([
+        self.pose_nom = np.hstack([  # need to update this for geometry/visualizer output
             self.roll.get(),
             self.pitch.get(),
             self.yaw.get(),
             self.x.get(),
             self.y.get(),
-            self.z.get(),
-            self.twist_nom])
+            self.z.get()])
+        target_state = np.hstack([self.pose_nom, self.twist_nom])
         output.SetFromVector(target_state)
 
     def SetGripperOutput(self, context, output):
         output.set_value(self.gripper_closed)
-
-class PegPlanner(SimplePlanner):
-    """ 
-    This is a simple system block with no inputs. It simply outpus
-
-        1) A desired end-effector pose [roll;pitch;yaw;x;y;z] (and pose dot)
-        2) A desired gripper state (open or closed)
-
-    for a simple peg insertion task.
-    """
-    def __init__(self):
-        SimplePlanner.__init__(self)
-
-        self.gripper_closed = False
-
-        self.pregrasp = np.array([3*np.pi/2,  
-                                  0.0,
-                                  np.pi/2,
-                                  0.2,
-                                  0.5,
-                                  0.12])
-        
-        self.grasp = np.array([3*np.pi/2,  
-                               0.0,
-                               np.pi/2,
-                               0.1,
-                               0.5,
-                               0.12])
-        
-        self.predrop = np.array([3*np.pi/2,  
-                                 0.0,
-                                 np.pi/2,
-                                 -0.385,
-                                 0.5,
-                                 0.4])
-        self.drop = np.array([3*np.pi/2,  
-                              0.0,
-                              np.pi/2,
-                              -0.385,
-                              0.5,
-                              0.22])
-
-    def SetGripperOutput(self, context, output):
-        output.set_value(self.gripper_closed)
-    
-    def SetEndEffectorOutput(self, context, output):
-        # We'll go through a pre-scheduled simple sequence of moves
-        t = context.get_time()
-
-        if t < 5:
-            # Go to pre-grasp position
-            target_pose = self.pregrasp
-        elif (t < 8):
-            # Go to grasp position
-            target_pose = self.grasp
-        elif (t < 14):
-            # Close gripper and go to pre-drop position
-            self.gripper_closed = True
-            target_pose = self.predrop
-        elif (t < 20):
-            # Move to the drop position
-            target_pose = self.drop
-        else:
-            # Drop the peg and go home
-            self.gripper_closed = False
-            target_pose = self.pregrasp
-
-        target_state = np.hstack([target_pose, np.zeros(6)])
-        output.SetFromVector(target_state)
-

@@ -6,11 +6,11 @@ import os
 from pydrake.all import *
 from reduced_order_model import ReducedOrderModelPlant
 from controller import Gen3Controller
-from planners import GuiPlanner, SimplePlanner, PegPlanner
+from planners import GuiPlanner, SimplePlanner
 
 ############## Setup Parameters #################
 
-sim_time = 5
+sim_time = np.inf
 dt = 3e-3
 target_realtime_rate = 1.0
 
@@ -23,10 +23,10 @@ x0 = np.array([np.pi-0.5,
                np.pi/2,
                0.2,
                0.3,
-               0.5])
+               0.4])
 
 # High-level planner
-planner = "simple"    # must be one of "gui", "peg", or "simple"
+planner = "gui"    # must be "gui" or "simple"
 
 # Type of controller to use. Must be "standard", "constrained" or "ours".
 # 
@@ -127,7 +127,7 @@ c_plant.Finalize()
 plant.Finalize()
 assert plant.geometry_source_is_registered()
 
-# Add end-effector visualization
+# Add (relaxed) end-effector target visualization
 ee_source = scene_graph.RegisterSource("ee")
 ee_frame = GeometryFrame("ee")
 scene_graph.RegisterFrame(ee_source, ee_frame)
@@ -139,13 +139,26 @@ ee_geometry = GeometryInstance(X_ee.inverse(), ee_shape, "ee")
 ee_geometry.set_illustration_properties(MakePhongIllustrationProperties(ee_color))
 scene_graph.RegisterGeometry(ee_source, ee_frame.id(), ee_geometry)
 
+# Add (non-relaxed) end-effector target visualization
+target_source = scene_graph.RegisterSource("target")
+target_frame = GeometryFrame("target")
+scene_graph.RegisterFrame(target_source, target_frame)
+
+#target_shape = Sphere(0.04)
+#X_target = RigidTransform()
+target_shape = Mesh(os.path.abspath("./models/hande_gripper/meshes/hand-e_with_fingers.obj"),scale=1e-3)
+X_target = X_ee.inverse()
+target_color = np.array([1.0,1.0,0.0,0.4])
+
+target_geometry = GeometryInstance(X_target, target_shape, "target")
+target_geometry.set_illustration_properties(MakePhongIllustrationProperties(target_color))
+scene_graph.RegisterGeometry(target_source, target_frame.id(), target_geometry)
+
 # Create planner block, which determines target end-effector setpoints and gripper state
 if planner == "simple":
-    rom_planner = builder.AddSystem(SimplePlanner())
+    rom_planner = builder.AddSystem(SimplePlanner(target_frame.id()))
 elif planner == "gui":
-    rom_planner = builder.AddSystem(GuiPlanner())
-elif planner == "peg":
-    rom_planner = builder.AddSystem(PegPlanner())
+    rom_planner = builder.AddSystem(GuiPlanner(target_frame.id()))
 else:
     raise ValueError("Invalid planner %s" % planner)
 rom_planner.set_name("High-level Planner")
@@ -215,6 +228,9 @@ builder.Connect(
 builder.Connect(
         rom.GetOutputPort("ee_geometry"),
         scene_graph.get_source_pose_port(ee_source))
+builder.Connect(
+        rom_planner.GetOutputPort("target_geometry"),
+        scene_graph.get_source_pose_port(target_source))
 
 # Set up the Visualizer
 visualizer_params = DrakeVisualizerParams(role=Role.kIllustration)  # kProximity for collision geometry,
