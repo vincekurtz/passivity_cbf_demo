@@ -65,6 +65,15 @@ robot_urdf = FindResourceOrThrow(robot_description_file)
 gen3 = Parser(plant=plant).AddModelFromFile(robot_urdf,"gen3")
 c_gen3 = Parser(plant=c_plant).AddModelFromFile(robot_urdf,"gen3")
 
+# Add a frame to the controller's plant which represents the end-effector position.
+X_ee = RigidTransform()
+X_ee.set_translation([0.0,0.0,0.13])
+ee_frame = FixedOffsetFrame(
+                    "end_effector",
+                    c_plant.GetFrameByName("end_effector_link"),
+                    X_ee, c_gen3)
+c_plant.AddFrame(ee_frame)
+
 # Load the gripper model from a urdf file
 gripper_file = "drake/" + os.path.relpath("./models/hande_gripper/urdf/robotiq_hande.urdf", start=drake_path)
 gripper_urdf = FindResourceOrThrow(gripper_file)
@@ -125,9 +134,8 @@ scene_graph.RegisterFrame(ee_source, ee_frame)
 
 ee_shape = Mesh(os.path.abspath("./models/hande_gripper/meshes/hand-e_with_fingers.obj"),scale=1e-3)
 ee_color = np.array([0.1,0.1,0.1,0.4])
-X_ee = RigidTransform()
 
-ee_geometry = GeometryInstance(X_ee, ee_shape, "ee")
+ee_geometry = GeometryInstance(X_ee.inverse(), ee_shape, "ee")
 ee_geometry.set_illustration_properties(MakePhongIllustrationProperties(ee_color))
 scene_graph.RegisterGeometry(ee_source, ee_frame.id(), ee_geometry)
 

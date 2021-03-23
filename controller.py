@@ -135,10 +135,10 @@ class Gen3Controller(LeafSystem):
 
         # Relevant frames
         self.world_frame = self.plant.world_frame()
-        self.end_effector_frame = self.plant.GetFrameByName("end_effector_link")
+        self.end_effector_frame = self.plant.GetFrameByName("end_effector")
 
         self.world_frame_autodiff = self.plant_autodiff.world_frame()
-        self.end_effector_frame_autodiff = self.plant_autodiff.GetFrameByName("end_effector_link")
+        self.end_effector_frame_autodiff = self.plant_autodiff.GetFrameByName("end_effector")
 
         # Get joint angle and velocity limits based on the plant, which in
         # turn were loaded from a urdf
