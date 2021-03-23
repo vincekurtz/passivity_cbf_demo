@@ -17,7 +17,6 @@ To run this code locally, you will need
 - numpy
 - matplotlib
 - tkinter
-- ipywidgets
 
 ## Usage
 
