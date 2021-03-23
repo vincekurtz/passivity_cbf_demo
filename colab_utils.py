@@ -77,6 +77,15 @@ def setup_colab_simulation(controller_type, constraint_type, install_path, zmq_u
     gen3 = Parser(plant=plant).AddModelFromFile(robot_urdf,"gen3")
     c_gen3 = Parser(plant=c_plant).AddModelFromFile(robot_urdf,"gen3")
 
+    # Add a frame to the controller's plant which represents the end-effector position.
+    X_ee = RigidTransform()
+    X_ee.set_translation([0.0,0.0,0.13])
+    ee_frame = FixedOffsetFrame(
+                        "end_effector",
+                        c_plant.GetFrameByName("end_effector_link"),
+                        X_ee, c_gen3)
+    c_plant.AddFrame(ee_frame)
+
     # Load the gripper model from a urdf file
     gripper_file = "drake/" + os.path.relpath(install_path + "/models/hande_gripper/urdf/robotiq_hande.urdf", start=drake_path)
     gripper_urdf = FindResourceOrThrow(gripper_file)
@@ -119,21 +128,35 @@ def setup_colab_simulation(controller_type, constraint_type, install_path, zmq_u
     plant.Finalize()
     assert plant.geometry_source_is_registered()
 
-    # Add end-effector visualization
+    # Add (relaxed) end-effector reference visualization
     ee_source = scene_graph.RegisterSource("ee")
     ee_frame = GeometryFrame("ee")
     scene_graph.RegisterFrame(ee_source, ee_frame)
 
     ee_shape = Mesh(os.path.abspath(install_path + "/models/hande_gripper/meshes/hand-e_with_fingers.obj"),scale=1e-3)
     ee_color = np.array([0.1,0.1,0.1,0.4])
-    X_ee = RigidTransform()
 
-    ee_geometry = GeometryInstance(X_ee, ee_shape, "ee")
+    ee_geometry = GeometryInstance(X_ee.inverse(), ee_shape, "ee")
     ee_geometry.set_illustration_properties(MakePhongIllustrationProperties(ee_color))
     scene_graph.RegisterGeometry(ee_source, ee_frame.id(), ee_geometry)
 
+    # Add (non-relaxed) end-effector target visualization
+    target_source = scene_graph.RegisterSource("target")
+    target_frame = GeometryFrame("target")
+    scene_graph.RegisterFrame(target_source, target_frame)
+
+    #target_shape = Sphere(0.04)
+    #X_target = RigidTransform()
+    target_shape = Mesh(os.path.abspath("./models/hande_gripper/meshes/hand-e_with_fingers.obj"),scale=1e-3)
+    X_target = X_ee.inverse()
+    target_color = np.array([1.0,1.0,0.0,0.4])
+
+    target_geometry = GeometryInstance(X_target, target_shape, "target")
+    target_geometry.set_illustration_properties(MakePhongIllustrationProperties(target_color))
+    scene_graph.RegisterGeometry(target_source, target_frame.id(), target_geometry)
+
     # Create planner block, which determines target end-effector setpoints and gripper state
-    rom_planner = builder.AddSystem(JupyterGuiPlanner())
+    rom_planner = builder.AddSystem(JupyterGuiPlanner(target_frame.id()))
     rom_planner.set_name("High-level Planner")
 
     # Create reduced-order model (double integrator)
@@ -201,6 +224,9 @@ def setup_colab_simulation(controller_type, constraint_type, install_path, zmq_u
     builder.Connect(
             rom.GetOutputPort("ee_geometry"),
             scene_graph.get_source_pose_port(ee_source))
+    builder.Connect(
+            rom_planner.GetOutputPort("target_geometry"),
+            scene_graph.get_source_pose_port(target_source))
 
     # Set up the Visualizer
     meshcat = ConnectMeshcatVisualizer(builder=builder,
