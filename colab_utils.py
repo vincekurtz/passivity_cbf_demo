@@ -10,7 +10,7 @@ from planners import JupyterGuiPlanner
 import warnings
 warnings.filterwarnings("ignore", category=UserWarning)
 
-def setup_colab_simulation(controller_type, constraint_type, install_path, zmq_url, include_manipuland=False):
+def setup_colab_simulation(controller_type, constraint_type, install_path, zmq_url, include_manipuland=False, show_contact_forces=True):
     """
     A convienience function for setting up a simulation on Google Colab. 
     Does basically the same thing as simulate.py, but interfaces with meshcat
@@ -22,6 +22,7 @@ def setup_colab_simulation(controller_type, constraint_type, install_path, zmq_u
     @param install_path        Path from where the code is being run to this directory
     @param zmq_url             Reference URL for connecting to meshcat
     @param include_manipuland  (optional) boolean indicating whether to include a simple peg to manipulate in the scene
+    @param show_contact_forces (optional) boolean indicating whether to show contact force vectors
 
     """
     ############## Setup Parameters #################
@@ -236,6 +237,17 @@ def setup_colab_simulation(controller_type, constraint_type, install_path, zmq_u
                                         zmq_url=zmq_url,
                                         scene_graph=scene_graph,
                                         output_port=scene_graph.get_query_output_port())
+
+    if show_contact_forces:
+        contact_vis = builder.AddSystem(MeshcatContactVisualizer(
+                                meshcat,
+                                force_threshold=0.0,
+                                contact_force_scale=10,
+                                contact_force_radius=0.002,
+                                plant=plant))
+        builder.Connect(
+                plant.get_contact_results_output_port(),
+                contact_vis.GetInputPort("contact_results"))
 
     # Compile the diagram: no adding control blocks from here on out
     diagram = builder.Build()
