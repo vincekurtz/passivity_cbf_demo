@@ -24,10 +24,12 @@ class Gen3Controller(LeafSystem):
 
         # Type of control method to use. 
         # 
-        #  - "standard" directly applies a task-space passivity controller as a constraint.
-        #  - "constrained" attempts to match this controller as a cost subject to other constraints.
+        #  - "unconstrained" directly applies a task-space passivity controller as a constraint.
+        #  - "damped_least_squares" is the same as above, but with a damped Jacobian pseudoinverse.
+        #  - "constrained" attempts to match the "unconstrained" controller as a cost subject to other constraints.
         #  - "ours" modifies the reference so passivity and constraint satisfaction can be guaranteed.
-        assert (strategy == "ours") or (strategy == "constrained") or (strategy == "standard"), \
+        assert (strategy == "ours") or (strategy == "constrained") or \
+                (strategy == "unconstrained") or (strategy == "damped_least_squares"), \
                 "Invalid stragety %s" % strategy
         self.strategy = strategy
 
@@ -695,7 +697,7 @@ class Gen3Controller(LeafSystem):
             self.AddVdotConstraint(xd_tilde, Lambda, Q, Jbar, xdd_nom, 
                                                 J, qdd, Jdqd, Kp, x_tilde)
       
-        if (self.strategy == "standard"):
+        if (self.strategy == "unconstrained"):
             # s.t. Jbar'*tau = f_des, where
             # f_des = Lambda*xdd_nom + Lambda*Q*(qd - Jbar*xd_tilde) + Jbar.T*tau_g 
             #                                                   - Kp*x_tilde - Kd*xd_tilde
@@ -737,6 +739,22 @@ class Gen3Controller(LeafSystem):
         tau = result.GetSolution(tau)
         xdd_nom = result.GetSolution(xdd_nom)
         qdd = result.GetSolution(qdd)
+       
+        if (self.strategy == "damped_least_squares"):
+            # For some reason the optimization-based approach seems less effective in this case,
+            # so we'll just apply tau = J'*f_des and use the nullspace projector for secondary
+            # objectives
+            delta = 1e-3
+            Jbar_dls = J.T@np.linalg.inv(J@J.T + delta*np.eye(6))
+            f_des = Lambda@xdd_target + Lambda@Q@(qd - Jbar_dls@xd_tilde) + Jbar_dls.T@tau_g - Kp@x_tilde - Kd@xd_tilde
+           
+            # Null-space torques try to regulate to nominal joint angles
+            q0 = np.pi*np.array([-0.1,0.1,0.6,-0.5,0.2,-0.5,0,0,0])
+            tau0 = -1.0*qd - 5.0*(q-q0)
+            N = np.eye(9) - J.T@Jbar_dls.T
+
+            tau = J.T@f_des + N@tau0
+            qdd = Minv@(tau - Cqd - tau_g)
 
         # Convert RoM rotational input from angular acceleration to RPYddt
         # for sending to the RoM

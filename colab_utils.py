@@ -42,7 +42,7 @@ def setup_colab_simulation(controller_type, constraint_type, install_path, zmq_u
 
     # Map controller_type and constraint_type strings used in colab to the strings used
     # for differentiating controller and constraint types by the controller
-    ctrl_dict = {"Unconstrained":"standard", "Standard":"constrained", "Passivity Guaranteed":"ours"}
+    ctrl_dict = {"Unconstrained":"unconstrained", "Standard":"constrained", "Passivity Guaranteed":"ours"}
     cons_dict = {"Singularity Avoidance":"singularity", "Joint Limits":"joint", "None":"none"}
 
     # Type of controller to use. Must be "standard", "constrained" or "ours".
