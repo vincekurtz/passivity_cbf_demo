@@ -147,7 +147,7 @@ def setup_colab_simulation(controller_type, constraint_type, install_path, zmq_u
 
     #target_shape = Sphere(0.04)
     #X_target = RigidTransform()
-    target_shape = Mesh(os.path.abspath("./models/hande_gripper/meshes/hand-e_with_fingers.obj"),scale=1e-3)
+    target_shape = Mesh(os.path.abspath(install_path + "/models/hande_gripper/meshes/hand-e_with_fingers.obj"),scale=1e-3)
     X_target = X_ee.inverse()
     target_color = np.array([1.0,1.0,0.0,0.4])
 
