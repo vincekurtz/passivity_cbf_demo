@@ -10,7 +10,7 @@ from planners import JupyterGuiPlanner
 import warnings
 warnings.filterwarnings("ignore", category=UserWarning)
 
-def setup_colab_simulation(controller_type, constraint_type, install_path, zmq_url, include_manipuland=False, show_contact_forces=True):
+def setup_colab_simulation(controller_type, constraint_type, install_path, zmq_url, dt=3e-3, include_manipuland=False, show_contact_forces=True):
     """
     A convienience function for setting up a simulation on Google Colab. 
     Does basically the same thing as simulate.py, but interfaces with meshcat
@@ -21,14 +21,12 @@ def setup_colab_simulation(controller_type, constraint_type, install_path, zmq_u
     @param constraint_type     String indicating what types of contstraints to apply
     @param install_path        Path from where the code is being run to this directory
     @param zmq_url             Reference URL for connecting to meshcat
+    @param dt                  (optional) Simulation timestep, in seconds. Defaults to 0.003s.
     @param include_manipuland  (optional) boolean indicating whether to include a simple peg to manipulate in the scene
     @param show_contact_forces (optional) boolean indicating whether to show contact force vectors
 
     """
     ############## Setup Parameters #################
-
-    dt = 3e-3
-    target_realtime_rate = 1.0
 
     # Initial joint angles
     q0 = np.pi*np.array([-0.1,0.1,0.6,-0.5,0.2,-0.5,0])
@@ -256,7 +254,7 @@ def setup_colab_simulation(controller_type, constraint_type, install_path, zmq_u
 
     # Simulator setup
     simulator = Simulator(diagram, diagram_context)
-    simulator.set_target_realtime_rate(target_realtime_rate)
+    simulator.set_target_realtime_rate(1.0)
     simulator.set_publish_every_time_step(False)
 
     # Set initial states
