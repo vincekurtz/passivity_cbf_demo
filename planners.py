@@ -183,7 +183,7 @@ class GuiPlanner(SimplePlanner):
         self.window = tk.Tk()
         self.window.title("Planner")
 
-        self.DeclarePeriodicPublish(0.01, 0.0)   # schedule window updates via self.DoPublish
+        self.DeclarePeriodicPublishNoHandler(0.01, 0.0)   # schedule window updates via self.DoPublish
 
         self.roll = tk.Scale(self.window, 
                      from_=-2*np.pi, 

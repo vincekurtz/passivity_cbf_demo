@@ -188,7 +188,7 @@ class Gen3Controller(LeafSystem):
         Q = w*A.T@A
         c = -w*A.T@b
 
-        return self.mp.AddQuadraticCost(Q,c,x)
+        return self.mp.AddQuadraticCost(Q, c, x, is_convex=True)
         
     def AddTaskForceConstraint(self, Jbar, tau, Lambda, xdd_nom, Q, qd, 
                                             xd_tilde, tau_g, Kp, x_tilde, Kd):
@@ -262,7 +262,7 @@ class Gen3Controller(LeafSystem):
         Q = Jbar@Jbar.T
         c = -(f_des.T@Jbar.T)[np.newaxis].T
 
-        return self.mp.AddQuadraticCost(Q,c,tau)
+        return self.mp.AddQuadraticCost(Q,c,tau, is_convex=True)
         
     def AddJointVelCBFConstraint(self, qdd, ah_qd_min, ah_qd_max):
         """
