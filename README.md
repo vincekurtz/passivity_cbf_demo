@@ -18,14 +18,21 @@ To run this code locally, you will need
 - matplotlib
 - tkinter
 
+An example of setting up a virtualenv:
+
+```
+python -m venv .venv/
+source .venv/bin/activate
+pip install drake jupyterlab ipywidgets matplotlib tk
+```
+
 ## Usage
 
 Clone this repository: `git clone https://github.com/vincekurtz/passivity_cbf_demo/`
 
-Start the Drake visualizer: 
+Start the visualizer using the appropriate env:
 ```
-cd drake
-./bazel-bin/tools/drake_visualizer
+python -m pydrake.visualization.meldis
 ```
 
 Run the main script: `./simulate.py`
